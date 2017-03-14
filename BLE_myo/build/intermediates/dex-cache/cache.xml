@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<items version="2" >
+
+    <item
+        jar="D:\my_workspace\myo_AndoridEMG-master\BLE_myo\app\build\intermediates\exploded-aar\com.android.support\appcompat-v7\22.0.0\classes.jar"
+        jumboMode="false"
+        revision="21.1.2"
+        sha1="d84409890828e07d344a3b9b1da545dba9897b51">
+        <dex dex="D:\my_workspace\myo_AndoridEMG-master\BLE_myo\app\build\intermediates\pre-dexed\debug\classes-ee21ad8d7b506767b1b7a845e1add13839d61c9f.jar" />
+    </item>
+    <item
+        jar="C:\Users\kumokay\AppData\Local\Android\sdk\extras\android\m2repository\com\android\support\support-annotations\22.0.0\support-annotations-22.0.0.jar"
+        jumboMode="false"
+        revision="21.1.2"
+        sha1="685d0b2c590447e85284ed84712cb363ba04eff8">
+        <dex dex="D:\my_workspace\myo_AndoridEMG-master\BLE_myo\app\build\intermediates\pre-dexed\debug\support-annotations-22.0.0-ea7de17fb900c98742ea29ef1dea3028281627e7.jar" />
+    </item>
+    <item
+        jar="D:\my_workspace\myo_AndoridEMG-master\BLE_myo\app\build\intermediates\exploded-aar\com.echo\holographlibrary\1.0\classes.jar"
+        jumboMode="false"
+        revision="21.1.2"
+        sha1="2940df18c83be014a53f7ab34dd2304c79117c00">
+        <dex dex="D:\my_workspace\myo_AndoridEMG-master\BLE_myo\app\build\intermediates\pre-dexed\debug\classes-ba6008f82d13ca5910740e3ee30544913ff8e578.jar" />
+    </item>
+    <item
+        jar="D:\my_workspace\myo_AndoridEMG-master\BLE_myo\app\build\intermediates\exploded-aar\com.android.support\support-v4\22.0.0\classes.jar"
+        jumboMode="false"
+        revision="21.1.2"
+        sha1="4e86306289ace4aa0cfec44a05ed2b410d36989d">
+        <dex dex="D:\my_workspace\myo_AndoridEMG-master\BLE_myo\app\build\intermediates\pre-dexed\debug\classes-ebee2d52964ce4257ddf9f13b3607948ff652321.jar" />
+    </item>
+    <item
+        jar="D:\my_workspace\myo_AndoridEMG-master\BLE_myo\app\build\intermediates\exploded-aar\com.android.support\support-v4\22.0.0\libs\internal_impl-22.0.0.jar"
+        jumboMode="false"
+        revision="21.1.2"
+        sha1="b5b92f469d515a13d778900f6d50c03d12f35504">
+        <dex dex="D:\my_workspace\myo_AndoridEMG-master\BLE_myo\app\build\intermediates\pre-dexed\debug\internal_impl-22.0.0-846f87ef4289909c477b6291793ae5a474f7ff34.jar" />
+    </item>
+
+</items>
