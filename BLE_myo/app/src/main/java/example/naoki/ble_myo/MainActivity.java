@@ -1,24 +1,18 @@
 package example.naoki.ble_myo;
 
-import android.content.Context;
-import android.content.Intent;
-import android.graphics.Color;
-import android.os.AsyncTask;
-import android.os.Environment;
-import android.os.ParcelUuid;
-import android.support.v7.app.ActionBarActivity;
-import android.os.Bundle;
-import android.os.Handler;
-import android.util.Log;
-import android.view.View;
-import android.view.Menu;
-import android.view.MenuItem;
-
-import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
-
+import android.bluetooth.BluetoothManager;
+import android.content.Intent;
+import android.os.AsyncTask;
+import android.os.Bundle;
+import android.os.Environment;
+import android.os.Handler;
+import android.os.ParcelUuid;
+import android.support.v7.app.ActionBarActivity;
+import android.util.Log;
+import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -90,7 +84,7 @@ public class MainActivity extends ActionBarActivity implements BluetoothAdapter.
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        //ready
+        // ready
         graph = (LineGraph) findViewById(R.id.holo_graph_view);
         emgDataText = (TextView)findViewById(R.id.emgDataTextView);
         gestureText = (TextView)findViewById(R.id.gestureTextView);
@@ -253,8 +247,7 @@ public class MainActivity extends ActionBarActivity implements BluetoothAdapter.
 
     public void onClickEMG(View v) {
         Button bEMG = (Button) v.findViewById(R.id.bEMG);
-        if(bEMG.getText().equals("Start"))
-        {
+        if(bEMG.getText().equals("Start")) {
 
             //doConnectTCP("start_emg_data");
             // open a new FileOptputStream
@@ -273,27 +266,14 @@ public class MainActivity extends ActionBarActivity implements BluetoothAdapter.
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US);
             sdf.setTimeZone(TimeZone.getTimeZone("PST"));
             String filename = "log_" + sdf.format(new Date()).toString() + ".txt";
-
-
-            File file = new File(baseFolder + File.separator + filename);
-            file.getParentFile().mkdirs();
-            Log.d(TAG, "save log to " + file.toString());
-
-
-            try {
-                mOutputStream = new FileOutputStream(file);
-                mOutputStream.write(("["+sdf.format(new Date()).toString()+"][Start]\n").getBytes());
-                mOutputStream.flush();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            String pathname = baseFolder + File.separator + filename;
 
             for (String s : deviceMap.keySet()) {
                 DeviceData data = deviceMap.get(s);
                 if(data.is_connected == true) {
                     Log.d(TAG, s + " enable EMG");
                     data.myoCallback.setTcpClient(mTcpClient);
-                    data.myoCallback.setFileOutputStream(mOutputStream);
+                    data.myoCallback.setOutputFile(pathname);
                     data.myoCallback.setMyoControlCommand(commandList.sendEmgOnly());
                 }
             }
@@ -303,8 +283,7 @@ public class MainActivity extends ActionBarActivity implements BluetoothAdapter.
             deviceMap.get(updateUIDeviceName).myoCallback.isUpdateUI(true);
             Log.d(TAG, "start logging");
         }
-        else if(bEMG.getText().equals("Stop"))
-        {
+        else if (bEMG.getText().equals("Stop")) {
             bEMG.setText("Start");
             setGestureText("Gesture");
             //bEMG.setEnabled(false);
@@ -320,7 +299,8 @@ public class MainActivity extends ActionBarActivity implements BluetoothAdapter.
             }
 
             try {
-                deviceMap.get(updateUIDeviceName).myoCallback.setFileOutputStream(null);
+                // TODO: instead of just calling
+                deviceMap.get(updateUIDeviceName).myoCallback.setOutputFile(null);
                 mOutputStream.write(("[Stop]\n").getBytes());
                 mOutputStream.flush();
                 mOutputStream.close();
@@ -345,7 +325,7 @@ public class MainActivity extends ActionBarActivity implements BluetoothAdapter.
         mBluetoothGatt = null;*/
         for (String s : this.deviceMap.keySet()) {
             DeviceData data = deviceMap.get(s);
-            if(data.is_connected == true) {
+            if (data.is_connected) {
                 data.myoCallback.stopCallback();
                 data.gatt.close();
                 data.myoCallback = null;

@@ -6,24 +6,21 @@ import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothProfile;
-import android.graphics.Color;
-import android.graphics.drawable.ColorDrawable;
 import android.os.Handler;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
-import com.echo.holographlibrary.Line;
 import com.echo.holographlibrary.LineGraph;
-import com.echo.holographlibrary.LinePoint;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.UUID;
-import java.io.FileOutputStream;
-import android.content.Context;
 
 import ro.kazy.tcpclient.TcpClient;
 
@@ -71,15 +68,29 @@ public class MyoGattCallback extends BluetoothGattCallback {
     private TcpClient mTcpClient = null;
     private boolean isUpdateUI = false;
     private String myoname = "";
-    private FileOutputStream mFileOptputStream = null;
+    private PrintWriter mFileWriter = null;
 
+    // hook up receivers
     public void isUpdateUI(boolean enable) {
         this.isUpdateUI = enable;
     }
-    public void setTcpClient(TcpClient tc) {this.mTcpClient = tc;}
-    public void setFileOutputStream(FileOutputStream fos) {this.mFileOptputStream = fos;}
 
-    public MyoGattCallback(Handler handler, TextView view, HashMap<String,View> views, String myoName) {
+    public void setTcpClient(TcpClient tc) {
+        this.mTcpClient = tc;
+    }
+
+    public void setOutputFile(String filePath) {
+        try {
+            File file = new File(filePath);
+            file.getParentFile().mkdirs();
+            Log.d(TAG, "save log to " + file.toString());
+            this.mFileWriter = new PrintWriter(new FileOutputStream(file));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public MyoGattCallback(Handler handler, TextView view, HashMap<String, View> views, String myoName) {
         mHandler = handler;
         dataView = view;
         TAG = TAG + "[" +myoName + "]";
@@ -270,55 +281,59 @@ public class MyoGattCallback extends BluetoothGattCallback {
         if (EMG_0_ID.equals(characteristic.getUuid().toString())) {
             long systemTime_ms = System.currentTimeMillis();
             byte[] emg_data = characteristic.getValue();
-            GestureDetectModelManager.getCurrentModel().event(systemTime_ms,emg_data);
+            GestureDetectModelManager.getCurrentModel().event(systemTime_ms, emg_data);
 
             ByteReader emg_br = new ByteReader();
             emg_br.setByteData(emg_data);
 
             //Log.d(TAG, "onCharacteristicChanged!!");
 
-            final String callback_msg = String.format(
+            // callback string for both file and tcp client
+            StringBuilder sbForFile = new StringBuilder();
+            sbForFile.append(systemTime_ms);
+            for (int i = 0; i < 16; i++)
+                sbForFile.append(',').append(emg_data[i]);
+            sbForFile.append('\n');
+            final String strForFile = sbForFile.toString();
+
+            // TODO: comment out the network transferring part for simplicity
+            /*
+            if (mTcpClient!=null) {
+                mHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        mTcpClient.sendMessage(strForFile);
+                    }
+                });
+            }
+            */
+
+            if (mFileWriter != null){ // save to internal storage
+                try {
+                    mFileWriter.write(strForFile);
+                    mFileWriter.flush();
+                    Log.d("mFileWriter", strForFile);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+
+            // TODO: comment out the UI update part for simplicity
+            /*
+
+            final String callback_msg = String.format(Locale.getDefault(),
                     "%s\n%5d %5d %5d %5d %5d %5d %5d %5d\n" +
                     "%s\n%5d %5d %5d %5d %5d %5d %5d %5d\n",
                     myoname,
                     //systemTime_ms,
-                    emg_br.getByte(),emg_br.getByte(),emg_br.getByte(),emg_br.getByte(),
-                    emg_br.getByte(),emg_br.getByte(),emg_br.getByte(),emg_br.getByte(),
+                    emg_br.getByte(), emg_br.getByte(), emg_br.getByte(), emg_br.getByte(),
+                    emg_br.getByte(), emg_br.getByte(), emg_br.getByte(), emg_br.getByte(),
                     myoname,
                     //systemTime_ms,
-                    emg_br.getByte(),emg_br.getByte(),emg_br.getByte(),emg_br.getByte(),
-                    emg_br.getByte(),emg_br.getByte(),emg_br.getByte(),emg_br.getByte());
+                    emg_br.getByte(), emg_br.getByte(), emg_br.getByte(), emg_br.getByte(),
+                    emg_br.getByte(), emg_br.getByte(), emg_br.getByte(), emg_br.getByte());
 
-            emg_br = new ByteReader();
-            emg_br.setByteData(emg_data);
-            for(int emgInputIndex = 0;emgInputIndex<16;emgInputIndex++) {
-                emgDatas[emgInputIndex] = emg_br.getByte();
-            }
-
-            if(mTcpClient!=null) {
-                mHandler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        mTcpClient.sendMessage(callback_msg);
-                    }
-                });
-            }
-            if(mFileOptputStream != null){ // save to internal storage
-                mHandler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            mFileOptputStream.write(callback_msg.getBytes());
-                            mFileOptputStream.flush();
-                            Log.d("mFileOptputStream", callback_msg);
-                        }catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                    }
-                });
-            }
-
-            if(isUpdateUI) {
+            if (isUpdateUI) {
                 mHandler.post(new Runnable() {
                     @Override
                     public void run() {
@@ -327,8 +342,8 @@ public class MyoGattCallback extends BluetoothGattCallback {
                         lineGraph.removeAllLines();
 
                         for (int inputIndex = 0; inputIndex < 8; inputIndex++) {
-                            dataList1_a[inputIndex][0] = emgDatas[0 + inputIndex];
-                            dataList1_b[inputIndex][0] = emgDatas[7 + inputIndex];
+                            dataList1_a[inputIndex][0] = emgDatas[    inputIndex];
+                            dataList1_b[inputIndex][0] = emgDatas[8 + inputIndex];
                         }
                         // 折れ線グラフ
                         int number = 50;
@@ -377,6 +392,7 @@ public class MyoGattCallback extends BluetoothGattCallback {
                     }
                 });
             }
+            */
 
             if (systemTime_ms > last_send_never_sleep_time_ms + NEVER_SLEEP_SEND_TIME) {
                 // set Myo [Never Sleep Mode]
