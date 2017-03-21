@@ -20,14 +20,14 @@ import android.widget.Toast;
 
 import com.echo.holographlibrary.LineGraph;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Locale;
+import java.util.TimeZone;
 
 public class MainActivity extends ActionBarActivity
         implements BluetoothAdapter.LeScanCallback, IReportEmg {
-    public static final int MENU_LIST = 0;
-    public static final int MENU_BYE = 1;
-
     // Activity-wise Tag
     private static final String TAG = "BLE_Myo";
 
@@ -35,7 +35,7 @@ public class MainActivity extends ActionBarActivity
     private static final int REQUEST_ENABLE_BT = 1;
 
     // Device Scanning Time (ms)
-    private static final long SCAN_PERIOD = 5000;
+    private static final long SCAN_PERIOD = 2000;
 
     // UI elements and helpers
     private TextView emgDataText;
@@ -186,8 +186,12 @@ public class MainActivity extends ActionBarActivity
             emgButton.setText("Stop");
             findMyoButton.setEnabled(false);
 
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US);
+            sdf.setTimeZone(TimeZone.getTimeZone("PST"));
+            String timeString = sdf.format(new Date());
+
             for (MyoGattCallback m : myoGattCallbacks)
-                m.startCollectEmgData();
+                m.startCollectEmgData(timeString);
         }
         else {
             isCollectingData = false;

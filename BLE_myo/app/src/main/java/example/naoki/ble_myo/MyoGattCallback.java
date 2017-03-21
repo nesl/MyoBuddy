@@ -8,20 +8,13 @@ import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothProfile;
 import android.content.Context;
-import android.os.Handler;
 import android.util.Log;
-import android.widget.Button;
-import android.widget.TextView;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.PrintWriter;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.LinkedList;
-import java.util.Locale;
 import java.util.Queue;
-import java.util.TimeZone;
 import java.util.UUID;
 
 /**
@@ -59,41 +52,19 @@ public class MyoGattCallback extends BluetoothGattCallback {
 
     private IReportEmg mEmgReceiver;
 
-    private TextView dataView;
-    private String callback_msg;
-    private Handler mHandler;
-    private int[] emgDatas = new int[16];
-
-
-    private int nowGraphIndex = 0;
-    private Button nowButton;
-
-
-    private boolean isUpdateUI = false;
     private PrintWriter mFileWriter = null;
 
 
     // ---- constructor --------------------------------------------------------------------------
-    public MyoGattCallback(String myoName, BluetoothDevice device, Context context, String baseFolder, IReportEmg emgReceiver) {
-        mMyoName = myoName;
+    public MyoGattCallback(String myoName, BluetoothDevice device, Context context,
+                           String baseFolder, IReportEmg emgReceiver) {
         logCatTag = "MyoGatt[" + myoName + "]";
+        mMyoName = myoName;
 
         mBluetoothGatt = device.connectGatt(context, false, this);
         mBaseFolder = baseFolder;
         mEmgReceiver = emgReceiver;
     }
-
-
-    // ---- hook up receivers --------------------------------------------------------------------
-    public void isUpdateUI(boolean enable) {
-        /*this.isUpdateUI = enable;*/
-    }
-
-    //TODO: move to begin sense
-    /*public void setOutputFile(String filePath) {
-
-    }*/
-
 
     @Override
     public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
@@ -125,7 +96,7 @@ public class MyoGattCallback extends BluetoothGattCallback {
                 // Getting CommandCharacteristic
                 mCharacteristic_emg0 = service_emg.getCharacteristic(UUID.fromString(EMG_0_ID));
                 if (mCharacteristic_emg0 == null) {
-                    callback_msg = "Not Found EMG-Data Characteristic";
+                    //callback_msg = "Not Found EMG-Data Characteristic";
                 } else {
                     // Setting the notification
                     boolean registered_0 = gatt.setCharacteristicNotification(mCharacteristic_emg0, true);
@@ -186,7 +157,7 @@ public class MyoGattCallback extends BluetoothGattCallback {
         //put the descriptor into the write queue
         descriptorWriteQueue.add(d);
         //if there is only 1 item in the queue, then write it.  If more than 1, we handle asynchronously in the callback above
-        if(descriptorWriteQueue.size() == 1){
+        if (descriptorWriteQueue.size() == 1){
             mBluetoothGatt.writeDescriptor(d);
         }
     }
@@ -201,9 +172,9 @@ public class MyoGattCallback extends BluetoothGattCallback {
         }
         descriptorWriteQueue.remove();  //pop the item that we just finishing writing
         //if there is more to write, do it!
-        if(descriptorWriteQueue.size() > 0)
+        if (descriptorWriteQueue.size() > 0)
             mBluetoothGatt.writeDescriptor(descriptorWriteQueue.element());
-        else if(readCharacteristicQueue.size() > 0)
+        else if (readCharacteristicQueue.size() > 0)
             mBluetoothGatt.readCharacteristic(readCharacteristicQueue.element());
     }
 
@@ -232,20 +203,20 @@ public class MyoGattCallback extends BluetoothGattCallback {
                     ByteReader byteReader = new ByteReader();
                     byteReader.setByteData(data);
 
-                    callback_msg = String.format("Serial Number     : %02x:%02x:%02x:%02x:%02x:%02x",
-                            byteReader.getByte(), byteReader.getByte(), byteReader.getByte(),
-                            byteReader.getByte(), byteReader.getByte(), byteReader.getByte()) +
-                            '\n' + String.format("Unlock            : %d", byteReader.getShort()) +
-                            '\n' + String.format("Classifier builtin:%d active:%d (have:%d)",
-                            byteReader.getByte(), byteReader.getByte(), byteReader.getByte()) +
-                            '\n' + String.format("Stream Type       : %d", byteReader.getByte());
+                    //callback_msg = String.format("Serial Number     : %02x:%02x:%02x:%02x:%02x:%02x",
+                    //        byteReader.getByte(), byteReader.getByte(), byteReader.getByte(),
+                    //        byteReader.getByte(), byteReader.getByte(), byteReader.getByte()) +
+                    //        '\n' + String.format("Unlock            : %d", byteReader.getShort()) +
+                    //        '\n' + String.format("Classifier builtin:%d active:%d (have:%d)",
+                    //        byteReader.getByte(), byteReader.getByte(), byteReader.getByte()) +
+                    //        '\n' + String.format("Stream Type       : %d", byteReader.getByte());
 
-                    mHandler.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            dataView.setText(callback_msg);
-                        }
-                    });
+                    //mHandler.post(new Runnable() {
+                    //    @Override
+                    //    public void run() {
+                    //        dataView.setText(callback_msg);
+                    //    }
+                    //});
 
                 }
             }
@@ -345,11 +316,9 @@ public class MyoGattCallback extends BluetoothGattCallback {
     }
 
     // ---- helper functions --------------------------------------------------------------------
-    public void startCollectEmgData() {
+    public void startCollectEmgData(String timeString) {
         // generate file
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US);
-        sdf.setTimeZone(TimeZone.getTimeZone("PST"));
-        String filename = "log_" + sdf.format(new Date()) + ".txt";
+        String filename = "log_" + timeString + "_" + mMyoName + ".txt";
         String pathname = mBaseFolder + File.separator + filename;
         try {
             File file = new File(pathname);
