@@ -318,7 +318,8 @@ public class MyoGattCallback extends BluetoothGattCallback {
     // ---- helper functions --------------------------------------------------------------------
     public void startCollectEmgData(String timeString) {
         // generate file
-        String filename = "log_" + timeString + "_" + mMyoName + ".txt";
+        String myoNameForFile = mMyoName.replaceAll(" ", "-");
+        String filename = "log_" + timeString + "_" + myoNameForFile + ".txt";
         String pathname = mBaseFolder + File.separator + filename;
         try {
             File file = new File(pathname);

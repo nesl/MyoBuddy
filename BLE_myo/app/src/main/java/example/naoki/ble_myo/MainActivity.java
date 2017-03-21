@@ -186,7 +186,7 @@ public class MainActivity extends ActionBarActivity
             emgButton.setText("Stop");
             findMyoButton.setEnabled(false);
 
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US);
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH-mm-ss'Z'", Locale.US);
             sdf.setTimeZone(TimeZone.getTimeZone("PST"));
             String timeString = sdf.format(new Date());
 
