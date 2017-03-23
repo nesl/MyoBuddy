@@ -22,6 +22,7 @@ public class LineGraphHelper {
     public LineGraphHelper(LineGraph lineGraph, Handler handler) {
         mLineGraph = lineGraph;
         mHandler = handler;
+        reset();
     }
 
     /*
@@ -35,17 +36,29 @@ public class LineGraphHelper {
     */
 
     public void update(final int[] values) {
+        synchronized (data) {
+            for (int i = 0; i < 8; i++) {
+                System.arraycopy(data[i], 1, data[i], 0, NUM_SAMPLES - 1);
+                data[i][NUM_SAMPLES - 1]  = values[i];
+            }
+        }
+        draw();
+    }
+
+    public void reset() {
+        synchronized (data) {
+            for (int i = 0; i < 8; i++)
+                for (int j = 0; j < NUM_SAMPLES; j++)
+                    data[i][j] = 0;
+        }
+        draw();
+    }
+
+    private void draw() {
         mHandler.post(new Runnable() {
             @Override
             public void run() {
                 mLineGraph.removeAllLines();
-
-                synchronized (data) {
-                    for (int i = 0; i < 8; i++) {
-                        System.arraycopy(data[i], 1, data[i], 0, NUM_SAMPLES - 1);
-                        data[i][NUM_SAMPLES - 1]  = values[i];
-                    }
-                }
 
                 for (int i = 0; i < 1; i++) {
                     Line line = new Line();
@@ -64,13 +77,5 @@ public class LineGraphHelper {
                 }
             }
         });
-    }
-
-    public void reset() {
-        synchronized (data) {
-            for (int i = 0; i < 8; i++)
-                for (int j = 0; j < NUM_SAMPLES; j++)
-                    data[i][j] = 0;
-        }
     }
 }

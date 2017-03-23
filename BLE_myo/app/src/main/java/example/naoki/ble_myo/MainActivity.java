@@ -50,6 +50,7 @@ public class MainActivity extends ActionBarActivity
 
     // Data collection status
     private boolean isCollectingData = false;
+    private String filePrefix;
 
     // Myos
     private ArrayAdapter<String> myoListAdapter;
@@ -123,9 +124,6 @@ public class MainActivity extends ActionBarActivity
     public void closeBLEGatt() {
         for (MyoGattCallback m : myoGattCallbacks)
             m.stopCallback();
-
-        deviceNames.clear();
-        myoGattCallbacks.clear();
     }
 
     // ---- initialize UI components -------------------------------------------------------------
@@ -159,6 +157,12 @@ public class MainActivity extends ActionBarActivity
         } else {
             closeBLEGatt();
 
+            deviceNames.clear();
+            myoGattCallbacks.clear();
+            channelAGraph.reset();
+
+            myoListAdapter.notifyDataSetChanged();
+
             Toast.makeText(getApplicationContext(), "Scanning BLE devices...", Toast.LENGTH_SHORT).show();
             mBluetoothAdapter.startLeScan(this);
 
@@ -188,10 +192,12 @@ public class MainActivity extends ActionBarActivity
 
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH-mm-ss'Z'", Locale.US);
             sdf.setTimeZone(TimeZone.getTimeZone("PST"));
-            String timeString = sdf.format(new Date());
+            filePrefix = sdf.format(new Date());
 
             for (MyoGattCallback m : myoGattCallbacks)
-                m.startCollectEmgData(timeString);
+                m.startCollectEmgData(filePrefix);
+
+            channelAGraph.reset();
         }
         else {
             isCollectingData = false;
@@ -237,7 +243,8 @@ public class MainActivity extends ActionBarActivity
             channelAGraph.update(channelA);
 
             StringBuilder sb = new StringBuilder();
-            sb.append("[").append(deviceNames.get(selectedMyoIdx)).append("]\n");
+            sb.append("File prefix: ").append(filePrefix).append('\n');
+            sb.append("Myo name: ").append(deviceNames.get(selectedMyoIdx)).append("\n");
             sb.append("Channel A: ");
             for (int i = 0; i < 8; i++)
                 sb.append(String.format(Locale.getDefault(), "%5d", channelA[i]));
