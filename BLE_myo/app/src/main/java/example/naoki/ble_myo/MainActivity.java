@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
+import android.os.Message;
 import android.os.ParcelUuid;
 import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
@@ -26,6 +27,9 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.TimeZone;
 
+import example.naoki.ble_myo.example.naoki.ble_myo.uihelper.LineGraphHelper;
+import example.naoki.ble_myo.example.naoki.ble_myo.uihelper.TextViewHelper;
+
 public class MainActivity extends ActionBarActivity
         implements BluetoothAdapter.LeScanCallback, IReportEmg {
     // Activity-wise Tag
@@ -37,13 +41,16 @@ public class MainActivity extends ActionBarActivity
     // Device Scanning Time (ms)
     private static final long SCAN_PERIOD = 2000;
 
+    // UI update rate
+    private static final int UI_UPDATE_FPS = 45;
+    private static final long FRAME_PER_MS = 1000 / UI_UPDATE_FPS + 3;
+
     // UI elements and helpers
-    private TextView emgDataText;
     private Button findMyoButton;
     private Button emgButton;
-    private LineGraph graph;
 
-    private LineGraphHelper channelAGraph;
+    private LineGraphHelper channelGraph;
+    private TextViewHelper emgDataTextHelper;
 
     // Bluetooth and its usage status
     private BluetoothAdapter mBluetoothAdapter;
@@ -59,7 +66,9 @@ public class MainActivity extends ActionBarActivity
 
     // environment and helper
     private String baseFolder;
-    private Handler uiHandler;
+    private UiHandler uiHandler;
+    private Handler btHandler;
+
 
     // Graph
     private int selectedMyoIdx;
@@ -71,11 +80,12 @@ public class MainActivity extends ActionBarActivity
         setContentView(R.layout.activity_main);
 
         // initialize handler
-        uiHandler = new Handler();
+        uiHandler = new UiHandler();
+        btHandler = new Handler();
 
         // initialize UIs
-        graph = (LineGraph) findViewById(R.id.holo_graph_view);
-        emgDataText = (TextView) findViewById(R.id.emgDataTextView);
+        LineGraph graph = (LineGraph) findViewById(R.id.holo_graph_view);
+        TextView emgDataText = (TextView) findViewById(R.id.emgDataTextView);
         findMyoButton = (Button) findViewById(R.id.bFindMyo);
         emgButton = (Button) findViewById(R.id.bEMG);
 
@@ -83,7 +93,8 @@ public class MainActivity extends ActionBarActivity
 
         initializeMyoListView();
 
-        channelAGraph = new LineGraphHelper(graph, uiHandler);
+        channelGraph = new LineGraphHelper(graph);
+        emgDataTextHelper = new TextViewHelper(emgDataText);
 
         // Bluetooth
         BluetoothManager mBluetoothManager = (BluetoothManager) getSystemService(BLUETOOTH_SERVICE);
@@ -110,7 +121,7 @@ public class MainActivity extends ActionBarActivity
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == REQUEST_ENABLE_BT && resultCode == RESULT_OK) {
-            uiHandler.postDelayed(new Runnable() {
+            btHandler.postDelayed(new Runnable() {
                 @Override
                 public void run() {
                     mBluetoothAdapter.stopLeScan(MainActivity.this);
@@ -137,7 +148,8 @@ public class MainActivity extends ActionBarActivity
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 if (position != selectedMyoIdx) {
                     selectedMyoIdx = position;
-                    channelAGraph.reset();
+                    channelGraph.reset();
+                    uiHandler.updateOnce();
                 }
             }
         });
@@ -159,7 +171,8 @@ public class MainActivity extends ActionBarActivity
 
             deviceNames.clear();
             myoGattCallbacks.clear();
-            channelAGraph.reset();
+            channelGraph.reset();
+            uiHandler.updateOnce();
 
             myoListAdapter.notifyDataSetChanged();
 
@@ -168,7 +181,7 @@ public class MainActivity extends ActionBarActivity
 
             // Scanning Time out by Handler.
             // The device scanning needs high energy.
-            uiHandler.postDelayed(new Runnable() {
+            btHandler.postDelayed(new Runnable() {
                 @Override
                 public void run() {
                     mBluetoothAdapter.stopLeScan(MainActivity.this);
@@ -189,6 +202,7 @@ public class MainActivity extends ActionBarActivity
             isCollectingData = true;
             emgButton.setText("Stop");
             findMyoButton.setEnabled(false);
+            uiHandler.startUpdate();
 
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH-mm-ss'Z'", Locale.US);
             sdf.setTimeZone(TimeZone.getTimeZone("PST"));
@@ -197,12 +211,14 @@ public class MainActivity extends ActionBarActivity
             for (MyoGattCallback m : myoGattCallbacks)
                 m.startCollectEmgData(filePrefix);
 
-            channelAGraph.reset();
+            channelGraph.reset();
+            uiHandler.updateOnce();
         }
         else {
             isCollectingData = false;
             emgButton.setText("Start");
             findMyoButton.setEnabled(true);
+            uiHandler.stopUpdate();
 
             for (MyoGattCallback m : myoGattCallbacks)
                 m.stopCollectEmgData();
@@ -240,8 +256,8 @@ public class MainActivity extends ActionBarActivity
     @Override
     public void onReportEmg(MyoGattCallback myoCallback, int[][] channels) {
         if (myoCallback == myoGattCallbacks.get(selectedMyoIdx)) {
-            channelAGraph.update(channels[0]);
-            channelAGraph.update(channels[1]);
+            channelGraph.update(channels[0]);
+            channelGraph.update(channels[1]);
 
             StringBuilder sb = new StringBuilder();
             sb.append("File prefix: ").append(filePrefix).append('\n');
@@ -250,14 +266,33 @@ public class MainActivity extends ActionBarActivity
                 sb.append(String.format(Locale.getDefault(), "%5d", channels[0][i]));
             sb.append("\n");
 
-            final String displayText = sb.toString();
+            emgDataTextHelper.update(sb.toString());
+        }
+    }
 
-            uiHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    emgDataText.setText(displayText);
-                }
-            });
+    // ---- Handlers -----------------------------------------------------------------------------
+    private class UiHandler extends Handler {
+        private boolean isUpdating = false;
+        private void startUpdate() {
+            isUpdating = true;
+            sendEmptyMessage(0);
+        }
+        private void stopUpdate() {
+            isUpdating = false;
+            removeMessages(0);
+        }
+        private void updateOnce() {
+            if (isUpdating == false)
+                sendEmptyMessage(0);
+        }
+
+        @Override
+        public void handleMessage(Message msg) {
+            super.handleMessage(msg);
+            channelGraph.draw();
+            emgDataTextHelper.draw();
+            if (isUpdating)
+                sendEmptyMessageDelayed(0, FRAME_PER_MS);
         }
     }
 }
