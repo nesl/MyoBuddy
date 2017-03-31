@@ -27,8 +27,8 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.TimeZone;
 
-import example.naoki.ble_myo.example.naoki.ble_myo.uihelper.LineGraphHelper;
-import example.naoki.ble_myo.example.naoki.ble_myo.uihelper.TextViewHelper;
+import example.naoki.ble_myo.uihelper.LineGraphHelper;
+import example.naoki.ble_myo.uihelper.TextViewHelper;
 
 public class MainActivity extends ActionBarActivity
         implements BluetoothAdapter.LeScanCallback, IReportEmg {

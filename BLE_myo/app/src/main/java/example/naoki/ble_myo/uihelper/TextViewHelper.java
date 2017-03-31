@@ -1,4 +1,4 @@
-package example.naoki.ble_myo.example.naoki.ble_myo.uihelper;
+package example.naoki.ble_myo.uihelper;
 
 import android.widget.TextView;
 
