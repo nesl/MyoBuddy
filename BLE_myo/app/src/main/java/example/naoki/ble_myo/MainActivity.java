@@ -70,8 +70,11 @@ public class MainActivity extends ActionBarActivity
     private Handler btHandler;
 
 
-    // Graph
+    // Graph and real-time info
     private int selectedMyoIdx;
+    private int numSamplesPrevSecond;
+    private int numSamplesCurSecond;
+    private long secondOfPrevSample;
 
 
     @Override
@@ -148,6 +151,7 @@ public class MainActivity extends ActionBarActivity
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 if (position != selectedMyoIdx) {
                     selectedMyoIdx = position;
+                    resetSamplingRateStatistics();
                     channelGraph.reset();
                     uiHandler.updateOnce();
                 }
@@ -173,7 +177,7 @@ public class MainActivity extends ActionBarActivity
             myoGattCallbacks.clear();
             channelGraph.reset();
             uiHandler.updateOnce();
-
+            resetSamplingRateStatistics();
             myoListAdapter.notifyDataSetChanged();
 
             Toast.makeText(getApplicationContext(), "Scanning BLE devices...", Toast.LENGTH_SHORT).show();
@@ -254,20 +258,35 @@ public class MainActivity extends ActionBarActivity
 
     // ---- Get EMG data -------------------------------------------------------------------------
     @Override
-    public void onReportEmg(MyoGattCallback myoCallback, int[][] channels) {
+    public void onReportEmg(MyoGattCallback myoCallback, long timestampMs, int[][] channels) {
         if (myoCallback == myoGattCallbacks.get(selectedMyoIdx)) {
             channelGraph.update(channels[0]);
             channelGraph.update(channels[1]);
+
+            long timestampSec = timestampMs / 1000;
+            if (timestampSec != secondOfPrevSample) {
+                numSamplesPrevSecond = numSamplesCurSecond;
+                numSamplesCurSecond = 0;
+            }
+            numSamplesCurSecond += 2;
+            secondOfPrevSample = timestampSec;
 
             StringBuilder sb = new StringBuilder();
             sb.append("File prefix: ").append(filePrefix).append('\n');
             sb.append("Myo name: ").append(deviceNames.get(selectedMyoIdx)).append("\n");
             for (int i = 0; i < 8; i++)
-                sb.append(String.format(Locale.getDefault(), "%5d", channels[0][i]));
+                sb.append(String.format(Locale.getDefault(), "%5d", channels[1][i]));
+            sb.append("\n");
+            sb.append(String.format(Locale.getDefault(), "Sampling rate: %dHz", numSamplesPrevSecond));
             sb.append("\n");
 
             emgDataTextHelper.update(sb.toString());
         }
+    }
+
+    private void resetSamplingRateStatistics() {
+        numSamplesPrevSecond = 0;
+        numSamplesCurSecond = 0;
     }
 
     // ---- Handlers -----------------------------------------------------------------------------

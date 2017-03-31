@@ -271,7 +271,7 @@ public class MyoGattCallback extends BluetoothGattCallback {
                 }
             }
 
-            mEmgReceiver.onReportEmg(this, emgChannels);
+            mEmgReceiver.onReportEmg(this, systemTimeMs, emgChannels);
 
             if (systemTimeMs > lastSendNeverSleepTimeMs + NEVER_SLEEP_SEND_TIME) {
                 // set Myo [Never Sleep Mode]
