@@ -43,7 +43,7 @@ public class EmgData {
         emgData.add(element);
     }
 
-    public void setElement(int index ,double element) {
+    public void setElement(int index, double element) {
         emgData.set(index,element);
     }
 
@@ -78,7 +78,7 @@ public class EmgData {
     public Double getNorm(){
         Double norm = 0.00;
         for (int i_element = 0; i_element < 8; i_element++) {
-            norm += Math.pow( emgData.get(i_element) ,2.0);
+            norm += Math.pow(emgData.get(i_element), 2.0);
         }
         return Math.sqrt(norm);
     }

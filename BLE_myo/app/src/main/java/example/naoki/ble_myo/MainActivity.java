@@ -238,20 +238,16 @@ public class MainActivity extends ActionBarActivity
 
     // ---- Get EMG data -------------------------------------------------------------------------
     @Override
-    public void onReportEmg(MyoGattCallback myoCallback, int[] channelA, int[] channelB) {
+    public void onReportEmg(MyoGattCallback myoCallback, int[][] channels) {
         if (myoCallback == myoGattCallbacks.get(selectedMyoIdx)) {
-            channelAGraph.update(channelA);
+            channelAGraph.update(channels[0]);
+            channelAGraph.update(channels[1]);
 
             StringBuilder sb = new StringBuilder();
             sb.append("File prefix: ").append(filePrefix).append('\n');
             sb.append("Myo name: ").append(deviceNames.get(selectedMyoIdx)).append("\n");
-            sb.append("Channel A: ");
             for (int i = 0; i < 8; i++)
-                sb.append(String.format(Locale.getDefault(), "%5d", channelA[i]));
-            sb.append("\n");
-            sb.append("Channel B: ");
-            for (int i = 0; i < 8; i++)
-                sb.append(String.format(Locale.getDefault(), "%5d", channelB[i]));
+                sb.append(String.format(Locale.getDefault(), "%5d", channels[0][i]));
             sb.append("\n");
 
             final String displayText = sb.toString();

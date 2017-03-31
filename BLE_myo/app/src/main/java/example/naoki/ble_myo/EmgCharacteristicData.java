@@ -17,14 +17,10 @@ import java.util.ArrayList;
  */
  
 public class EmgCharacteristicData {
-    private ByteReader emgData = new ByteReader();
+    private ByteReader emgData;
 
     public EmgCharacteristicData(byte[] byteData) {
-        emgData.setByteData(byteData);
-    }
-
-    public EmgCharacteristicData(ByteReader byteReader){
-        emgData = byteReader;
+        emgData = new ByteReader(byteData);
     }
 
     public String getLine() {

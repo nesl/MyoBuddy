@@ -16,9 +16,9 @@ public class ByteReader {
     private byte[] byteData;
     private ByteBuffer bbf;
 
-    public void setByteData(byte[] data){
-        this.byteData = data;
-        this.bbf = ByteBuffer.wrap(this.byteData);
+    public ByteReader(byte[] data) {
+        byteData = data;
+        bbf = ByteBuffer.wrap(this.byteData);
         bbf.order(ByteOrder.LITTLE_ENDIAN);
     }
 
