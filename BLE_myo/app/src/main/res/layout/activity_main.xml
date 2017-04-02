@@ -4,13 +4,17 @@
     android:layout_height="match_parent" android:paddingLeft="@dimen/activity_horizontal_margin"
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
-    android:paddingBottom="@dimen/activity_vertical_margin" tools:context=".MainActivity">
+    android:paddingBottom="@dimen/activity_vertical_margin" tools:context=".MainActivity"
+    android:focusable="true"
+    android:focusableInTouchMode="true" >
 
     <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:tools="http://schemas.android.com/tools"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
+        android:focusable="true"
+        android:focusableInTouchMode="true"
         android:id="@+id/buttonLayout"
         android:layout_alignParentTop="true"
         android:layout_alignParentStart="true">
@@ -22,12 +26,18 @@
             android:id="@+id/bFindMyo"
             android:onClick="onClickFindMyo" />
 
+        <Spinner
+            android:id="@+id/repTimeSpinner"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:drawSelectorOnTop="true" />
+
         <Button
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Start"
             android:id="@+id/bEMG"
-            android:onClick="onClickEMG"/>
+            android:onClick="onClickEMG" />
 
     </LinearLayout>
 
@@ -42,7 +52,7 @@
 
     <TextView
         android:layout_width="fill_parent"
-        android:layout_height="240dp"
+        android:layout_height="160dp"
         android:text="(Waiting for connecting)"
         android:id="@+id/emgDataTextView"
         android:textSize="10sp"
@@ -50,10 +60,21 @@
         android:layout_below="@id/MyoListView" />
 
     <com.echo.holographlibrary.LineGraph
-        android:id="@+id/holo_graph_view"
+        android:id="@+id/holoGraphView"
         android:layout_height="match_parent"
         android:layout_width="match_parent"
         android:layout_below="@id/emgDataTextView"
         android:layout_alignParentStart="true" />
+
+    <TextView
+        android:layout_width="fill_parent"
+        android:layout_height="42dp"
+        android:text="--"
+        android:id="@+id/repCountingTextView"
+        android:textSize="30sp"
+        android:layout_alignParentBottom="true"
+        android:gravity="center"
+        android:background="#fff"
+        android:textColor="#f00" />
 
 </RelativeLayout>

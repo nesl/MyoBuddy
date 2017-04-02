@@ -16,6 +16,7 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -28,6 +29,7 @@ import java.util.Locale;
 import java.util.TimeZone;
 
 import example.naoki.ble_myo.uihelper.LineGraphHelper;
+import example.naoki.ble_myo.uihelper.TextViewCountingHelper;
 import example.naoki.ble_myo.uihelper.TextViewHelper;
 
 public class MainActivity extends ActionBarActivity
@@ -45,12 +47,19 @@ public class MainActivity extends ActionBarActivity
     private static final int UI_UPDATE_FPS = 45;
     private static final long FRAME_PER_MS = 1000 / UI_UPDATE_FPS + 3;
 
+    // Workout control
+    private static final long REP_TIME_MS = 2500L;
+    private static final double[] REP_TIME_OPTIONS = new double[]{2.0, 2.5, 3.0, 3.5, 4.0};
+
     // UI elements and helpers
     private Button findMyoButton;
     private Button emgButton;
+    private Spinner repTimeSpinner;
 
     private LineGraphHelper channelGraph;
     private TextViewHelper emgDataTextHelper;
+    private TextViewCountingHelper countingTextHelper;
+    private double chosenRepTimeSec;
 
     // Bluetooth and its usage status
     private BluetoothAdapter mBluetoothAdapter;
@@ -69,7 +78,6 @@ public class MainActivity extends ActionBarActivity
     private UiHandler uiHandler;
     private Handler btHandler;
 
-
     // Graph and real-time info
     private int selectedMyoIdx;
     private int numSamplesPrevSecond;
@@ -87,17 +95,21 @@ public class MainActivity extends ActionBarActivity
         btHandler = new Handler();
 
         // initialize UIs
-        LineGraph graph = (LineGraph) findViewById(R.id.holo_graph_view);
+        LineGraph graph = (LineGraph) findViewById(R.id.holoGraphView);
         TextView emgDataText = (TextView) findViewById(R.id.emgDataTextView);
+        TextView repCntText = (TextView) findViewById(R.id.repCountingTextView);
         findMyoButton = (Button) findViewById(R.id.bFindMyo);
         emgButton = (Button) findViewById(R.id.bEMG);
+        //repTimeEditView = (EditText) findViewById(R.id.editRepTime);
 
         emgButton.setEnabled(false);
 
         initializeMyoListView();
+        initializeRepTimeSpinner();
 
         channelGraph = new LineGraphHelper(graph);
         emgDataTextHelper = new TextViewHelper(emgDataText);
+        countingTextHelper = new TextViewCountingHelper(repCntText, REP_TIME_MS);
 
         // Bluetooth
         BluetoothManager mBluetoothManager = (BluetoothManager) getSystemService(BLUETOOTH_SERVICE);
@@ -159,6 +171,28 @@ public class MainActivity extends ActionBarActivity
         });
     }
 
+    private void initializeRepTimeSpinner() {
+        repTimeSpinner = (Spinner) findViewById(R.id.repTimeSpinner);
+
+        ArrayList<String> repTimeOptionsStrings = new ArrayList<String>();
+        for (double v : REP_TIME_OPTIONS)
+            repTimeOptionsStrings.add(String.format(Locale.getDefault(), "%.1f secs", v));
+
+
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
+                android.R.layout.simple_spinner_item, repTimeOptionsStrings);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+
+        repTimeSpinner.setAdapter(adapter);
+        repTimeSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
+                chosenRepTimeSec = REP_TIME_OPTIONS[pos];
+            }
+
+            public void onNothingSelected(AdapterView<?> parent) {
+            }
+        });
+    }
 
     // ---- Button callbacks ---------------------------------------------------------------------
     public void onClickFindMyo(View btn) {
@@ -206,6 +240,7 @@ public class MainActivity extends ActionBarActivity
             isCollectingData = true;
             emgButton.setText("Stop");
             findMyoButton.setEnabled(false);
+            repTimeSpinner.setEnabled(false);
             uiHandler.startUpdate();
 
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH-mm-ss'Z'", Locale.US);
@@ -215,6 +250,7 @@ public class MainActivity extends ActionBarActivity
             for (MyoGattCallback m : myoGattCallbacks)
                 m.startCollectEmgData(filePrefix);
 
+            countingTextHelper.start(chosenRepTimeSec);
             channelGraph.reset();
             uiHandler.updateOnce();
         }
@@ -222,6 +258,8 @@ public class MainActivity extends ActionBarActivity
             isCollectingData = false;
             emgButton.setText("Start");
             findMyoButton.setEnabled(true);
+            repTimeSpinner.setEnabled(true);
+            countingTextHelper.stop();
             uiHandler.stopUpdate();
 
             for (MyoGattCallback m : myoGattCallbacks)
@@ -310,6 +348,7 @@ public class MainActivity extends ActionBarActivity
             super.handleMessage(msg);
             channelGraph.draw();
             emgDataTextHelper.draw();
+            countingTextHelper.draw();
             if (isUpdating)
                 sendEmptyMessageDelayed(0, FRAME_PER_MS);
         }
