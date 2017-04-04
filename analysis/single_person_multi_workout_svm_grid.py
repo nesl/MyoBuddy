@@ -59,9 +59,6 @@ def parser(paths, symbol):
         for bidx in bucket_idxs_to_be_removed:
             buckets.pop(bidx, None)
 
-        # extract features from each bucket
-        vectors = []
-
         for bidx in buckets:
             cur_bucket = buckets[bidx]
             cur_vector = []
@@ -115,6 +112,7 @@ root_folder = 'data'
 ### dates
 dates = [
         '0401',
+        '0404',
 ]
 
 ### Knob of type and weights
