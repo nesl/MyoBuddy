@@ -114,6 +114,8 @@ root_folder = 'data'
 dates = [
         '0401',
         '0404',
+        '0404_night',
+        '0405',
 ]
 
 ### Knob of type and weights
@@ -123,8 +125,8 @@ weights = [20, 30, 40, 50, 60, 70]
 #weights = []
 
 ### Knob of data for training and testing
-person = 'renju'
-# person = 'bo'
+#person = 'renju'
+person = 'bo'
 
 lb_2_Xy = {}
 for weight in weights:
@@ -171,7 +173,7 @@ X_test_scale = scaler.transform(X_test)
 best_accuracy = -1
 best_n_estimators = -1
 
-for e in range(1,50):
+for e in range(1, 50):
     clf = RandomForestClassifier(n_estimators=e)
     clf.fit(X_train_scale, y_train)
     prediction = clf.predict(X_test_scale)
@@ -183,7 +185,7 @@ for e in range(1,50):
 
 
 
-print('Random Forest Results: Best accuracy = %f, Best n estimators = %d' %(best_accuracy, best_n_estimators))
+print('Random Forest Results: Best accuracy = %f, Best n estimators = %d' % (best_accuracy, best_n_estimators))
 
 
 
