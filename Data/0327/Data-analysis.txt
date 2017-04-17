@@ -1,0 +1,11 @@
+Bo (bicep barbell): 11/14
+Renju (Bicep barbell): 7/13
+Combined (bicep): 16/27
+
+Bo (Tricep): 19/21
+Renju (Tricep): 14/17
+Combined (Tricep): 14/38
+
+Cross prediction (Bicep):
+	Bo(train) -> Renju:
+	Renju(train) -> Bo:
