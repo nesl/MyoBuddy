@@ -73,10 +73,10 @@ def get_file_paths(folders):
 #        'data/0321/light',
 #]
 heavy_folders = [
-        'data/0322/20lbs',
+        '../Data/0322/20lbs',
 ]
 light_folders = [
-        'data/0322/5lbs',
+        '../Data/0322/5lbs',
 ]
 
 heavy_file_paths = get_file_paths(heavy_folders)
