@@ -133,7 +133,7 @@ def get_file_paths(folders):
 
 
 ### folder root
-root_folder = 'data'
+root_folder = '../Data'
 
 ### dates
 dates = [

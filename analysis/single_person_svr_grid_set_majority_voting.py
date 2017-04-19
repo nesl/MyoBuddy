@@ -198,7 +198,7 @@ def evaluate_cross_validation(classifier, folds_of_lb_2_Xy_sets):
 
 
 ### folder root
-root_folder = 'data'
+root_folder = '../Data'
 
 ### dates
 dates = [

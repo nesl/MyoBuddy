@@ -1,7 +1,7 @@
 ## Setup
 
-You need to make a symbolic link under this folder:
+Make a local folder so that files pulled from Android phones can be temporarily stored in it:
 
 ```
-ln -s /path/to/small_dataset data
+mkdir data/waiting_zone
 ```

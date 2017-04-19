@@ -195,7 +195,7 @@ def evaluate_classification(classifier, X_train, y_train, testing_lb_2_Xy_sets,
 
 
 ### folder root
-root_folder = 'data'
+root_folder = '../Data'
 
 ### dates
 dates = [
