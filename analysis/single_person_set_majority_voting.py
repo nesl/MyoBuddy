@@ -13,9 +13,9 @@ from sklearn import preprocessing
 
 
 K_NUM_CHANNELS = 8
-K_SEC_PER_REP = 4
-K_SKIPPED_REPS = 1
-K_NUM_FOLDS = 5
+K_SEC_PER_REP = 2
+K_SKIPPED_REPS = 2
+K_TESTING_RATIO = 0.2
 
 
 def extract_features_from_window(values):
@@ -55,11 +55,19 @@ def extract_features_from_window(values):
 
     #vector.extend(list(numpy.absolute(numpy.fft.fft(values)[:12])))
 
-    return [min_val, max_val, pt5_val, pt95_val, mean_val, var_val, diff_mean,
-        max_abs_val, pt95_abs_val, pt75_abs_val, pt50_abs_val, pt25_abs_val,
-        pt5_abs_val, mean_abs_val, var_abs_val,
-        #num_samples,
-        ratio0_40, ratio0_80, ratio40_80, ratio80_120, ratio125_inf]
+    return [min_val, max_val,
+            pt5_val, pt95_val,
+            mean_val,
+            var_val,
+            diff_mean,
+            max_abs_val,
+            pt95_abs_val, pt75_abs_val, pt50_abs_val, pt25_abs_val,
+            pt5_abs_val,
+            mean_abs_val,
+            var_abs_val,
+            #num_samples,
+            #ratio0_40, ratio0_80, ratio40_80, ratio80_120, ratio125_inf
+    ]
 
 
 def parser(paths, symbol):
@@ -113,12 +121,14 @@ def parser(paths, symbol):
 
             # channel dependent features
             for j in range(K_NUM_CHANNELS):
+            #for j in [1, 4, 6, 7]:
+            #for j in [1, 4, 6, 7]:
                 values = [row[j] for row in cur_bucket]
                 cur_vector.extend(extract_features_from_window(values))
 
             # aggregate channel features
-            values = [numpy.mean(row) for row in cur_bucket]
-            cur_vector.extend(extract_features_from_window(values))
+            #values = [numpy.mean(row) for row in cur_bucket]
+            #cur_vector.extend(extract_features_from_window(values))
 
             vectors.append(cur_vector)
 
@@ -137,16 +147,6 @@ def get_file_paths(folders):
     return ret
 
 
-def merge_folds_for_training_Xy(folds):
-    X, y = [], []
-    for fold in folds:
-        for weight in fold:
-            for tX, tY in fold[weight]:
-                X.extend(tX)
-                y.extend(tY)
-    return (X, y)
-
-
 def decide_set_label(pred_labels, method='majority vote'):
     if method == 'majority vote':
         return int(stats.mode(pred_labels)[0][0])
@@ -156,7 +156,7 @@ def decide_set_label(pred_labels, method='majority vote'):
         raise Exception('Non-existed method')
 
 
-def evaluate_cross_validation(classifier, folds_of_lb_2_Xy_sets):
+def evaluate_classification(classifier, X_train, y_train, testing_lb_2_Xy_sets):
     total_test_reps = 0
     correct_test_reps = 0
     rep_weight_errors = []
@@ -164,30 +164,25 @@ def evaluate_cross_validation(classifier, folds_of_lb_2_Xy_sets):
     total_test_sets = 0
     correct_test_sets = 0
 
-    for fold_idx in range(K_NUM_FOLDS):
-        training_folds = [folds_of_lb_2_Xy_sets[i] for i in range(K_NUM_FOLDS) if i != fold_idx]
-        X_train, y_train = merge_folds_for_training_Xy(training_folds)
-       
-        scaler = preprocessing.StandardScaler().fit(X_train)
-        X_train_scale = scaler.transform(X_train)
+    scaler = preprocessing.StandardScaler().fit(X_train)
+    X_train_scale = scaler.transform(X_train)
 
-        classifier.fit(X_train_scale, y_train)
+    classifier.fit(X_train_scale, y_train)
 
-        testing_fold = folds_of_lb_2_Xy_sets[fold_idx]
-        for lb in testing_fold:
-            for X_test, y_test in testing_fold[lb]:
-                X_test_scale = scaler.transform(X_test)
-                prediction = clf.predict(X_test_scale)
+    for lb in testing_lb_2_Xy_sets:
+        for X_test, y_test in testing_lb_2_Xy_sets[lb]:
+            X_test_scale = scaler.transform(X_test)
+            prediction = clf.predict(X_test_scale)
 
-                correct_cnt = sum([gnd == pred for gnd, pred in zip(y_test, prediction)])
-                weight_errors = [abs(gnd - pred) for gnd, pred in zip(y_test, prediction)]
-                
-                correct_test_reps += correct_cnt
-                total_test_reps += len(y_test)
-                rep_weight_errors.extend(weight_errors)
+            correct_cnt = sum([gnd == pred for gnd, pred in zip(y_test, prediction)])
+            weight_errors = [abs(gnd - pred) for gnd, pred in zip(y_test, prediction)]
+            
+            correct_test_reps += correct_cnt
+            total_test_reps += len(y_test)
+            rep_weight_errors.extend(weight_errors)
 
-                total_test_sets += 1
-                correct_test_sets += (decide_set_label(prediction, method='mean') == y_test[0])
+            total_test_sets += 1
+            correct_test_sets += (decide_set_label(prediction, method='mean') == y_test[0])
 
     avg_rep_accuracy = correct_test_reps / total_test_reps
     avg_rep_weight_error = numpy.mean(rep_weight_errors)
@@ -206,6 +201,7 @@ dates = [
         '0404',
         '0404_night',
         '0405',
+        '0408_afternoon',
 ]
 
 ### Knob of type and weights
@@ -234,15 +230,25 @@ for weight in weights:
         num_total_reps += len(X)
     print('%d lbs: %d sets, %d reps' % (weight, len(lb_2_Xy_sets[weight]), num_total_reps))
 
-folds_of_lb_2_Xy_sets = [{} for _ in range(K_NUM_FOLDS)]
+training_X = []
+training_y = []
+testing_lb_2_Xy_sets = {}
 for weight in weights:
-    for fidx in range(K_NUM_FOLDS):
-        folds_of_lb_2_Xy_sets[fidx][weight] = []
+    testing_lb_2_Xy_sets[weight] = []
+
     Xy_sets = lb_2_Xy_sets[weight]
     for i, Xy in enumerate(Xy_sets):
-        fold_idx = K_NUM_FOLDS * i // len(Xy_sets)
-        folds_of_lb_2_Xy_sets[fold_idx][weight].append(Xy)
+        if i / len(Xy_sets) < 1.0 - K_TESTING_RATIO:
+            X, y = Xy
+            training_X.extend(X)
+            training_y.extend(y)
+        else:
+            testing_lb_2_Xy_sets[weight].append(Xy)
 
+
+print('Person:', person)
+print('Weights:', weights)
+print('Testing ratio:', K_TESTING_RATIO)
 
 best_rep_accuracy, best_rep_weight_error, best_rep_params = -1, None, None
 best_set_accuracy, best_set_params = -1, None
@@ -251,12 +257,12 @@ for p_C in [2**e for e in range(-8, 11)]:
         clf = svm.SVC(C=p_C, gamma=p_gamma)
 
         (avg_rep_accuracy, correct_test_reps, total_test_reps, avg_rep_weight_error,
-            avg_set_accuracy, correct_test_sets, total_test_sets) = evaluate_cross_validation(
-                    clf, folds_of_lb_2_Xy_sets)
+            avg_set_accuracy, correct_test_sets, total_test_sets) = evaluate_classification(
+                    clf, training_X, training_y, testing_lb_2_Xy_sets)
 
-        print('C=%12f, gamma=%12f: rep accuracy=%3d/%3d (%f), rep weight error=%4.1f, set accuracy=%3d/%3d (%f)' % (
-            p_C, p_gamma, correct_test_reps, total_test_reps, avg_rep_accuracy, avg_rep_weight_error,
-            correct_test_sets, total_test_sets, avg_set_accuracy))
+        #print('C=%12f, gamma=%12f: rep accuracy=%3d/%3d (%f), rep weight error=%4.1f, set accuracy=%3d/%3d (%f)' % (
+        #    p_C, p_gamma, correct_test_reps, total_test_reps, avg_rep_accuracy, avg_rep_weight_error,
+        #    correct_test_sets, total_test_sets, avg_set_accuracy))
 
         params_str = 'Clf=SVM.rbf, C=%f, gamma=%f' % (p_C, p_gamma)
 
@@ -266,16 +272,24 @@ for p_C in [2**e for e in range(-8, 11)]:
         if avg_set_accuracy > best_set_accuracy:
             best_set_accuracy, best_set_params = avg_set_accuracy, params_str
 
+print('Final result rep: %s, accuracy=%f, weight error=%.1f' % (
+    best_rep_params, best_rep_accuracy, best_rep_weight_error))
+print('Final result sep: %s, accuracy=%f' % (
+    best_set_params, best_set_accuracy))
+
+
+best_rep_accuracy, best_rep_weight_error, best_rep_params = -1, None, None
+best_set_accuracy, best_set_params = -1, None
 for p_e in range(1, 50):
     clf = RandomForestClassifier(n_estimators=p_e)
 
     (avg_rep_accuracy, correct_test_reps, total_test_reps, avg_rep_weight_error,
-        avg_set_accuracy, correct_test_sets, total_test_sets) = evaluate_cross_validation(
-                clf, folds_of_lb_2_Xy_sets)
+        avg_set_accuracy, correct_test_sets, total_test_sets) = evaluate_classification(
+                clf, training_X, training_y, testing_lb_2_Xy_sets)
 
-    print('trees=%d: rep accuracy=%3d/%3d (%f), rep weight error=%4.1f, set accuracy=%3d/%3d (%f)' % (
-        p_e, correct_test_reps, total_test_reps, avg_rep_accuracy, avg_rep_weight_error,
-        correct_test_sets, total_test_sets, avg_set_accuracy))
+    #print('trees=%d: rep accuracy=%3d/%3d (%f), rep weight error=%4.1f, set accuracy=%3d/%3d (%f)' % (
+    #    p_e, correct_test_reps, total_test_reps, avg_rep_accuracy, avg_rep_weight_error,
+    #    correct_test_sets, total_test_sets, avg_set_accuracy))
 
     params_str = 'Clf=RF, e=%d' % (p_e)
 
@@ -284,7 +298,6 @@ for p_e in range(1, 50):
                 avg_rep_accuracy, avg_rep_weight_error, params_str)
     if avg_set_accuracy > best_set_accuracy:
         best_set_accuracy, best_set_params = avg_set_accuracy, params_str
-
 
 print('Final result rep: %s, accuracy=%f, weight error=%.1f' % (
     best_rep_params, best_rep_accuracy, best_rep_weight_error))

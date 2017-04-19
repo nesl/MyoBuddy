@@ -141,6 +141,7 @@ dates = [
         '0404',
         '0404_night',
         '0405',
+        '0408_afternoon',
 ]
 
 ### Knob of type and weights
@@ -151,8 +152,8 @@ weights = [20, 30, 40, 50, 60, 70]
 #weights = []
 
 ### Knob of data for training and testing
-#person = 'renju'
-person = 'bo'
+person = 'renju'
+#person = 'bo'
 
 lb_2_Xy = {}
 for weight in weights:
