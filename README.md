@@ -1,7 +1,7 @@
 # MyoBuddy
 MyoBuddy project aims at using electromyogram (EMG) sensors to detect weight one lifts when performing exercises, and help patients who suffer from muscle dystrophy track their rehabilitation progress.
 
-Our paper got accepted in BioMarker 2017, a workshop of MobiSys. Currently, we are making our paper camera-ready, and the link wlil appear once the paper is finalized.
+Our paper got accepted in [DigitalBioMarker 2017](http://pac.cs.cornell.edu/wdb2017/), titled "MyoBuddy: Detecting Barbell Weight Using Electromyogram Sensors" ([paper](https://dl.acm.org/citation.cfm?id=3089346))
 
 ## Structure of repository:
 - `BLE_myo` folder is the Android app which collects the EMG data from Myo armband.
